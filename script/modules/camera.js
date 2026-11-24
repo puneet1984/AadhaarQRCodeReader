@@ -52,6 +52,74 @@
 // ─── Camera controller ────────────────────────────────────────────────────────
 
 /**
+ * Formats camera exceptions into clear, actionable, user-friendly messages.
+ *
+ * @param {any} e
+ * @returns {string}
+ */
+function formatCameraError(e) {
+    if (!e) return "Unknown camera error";
+    if (e.name === "NotAllowedError" || e.name === "PermissionDeniedError") {
+        return "Camera permission denied. Please allow camera access in your browser settings.";
+    }
+    if (e.name === "NotFoundError" || e.name === "DevicesNotFoundError") {
+        return "No camera found on this device.";
+    }
+    if (e.name === "NotReadableError" || e.name === "TrackStartError") {
+        return "Camera is in use by another app or browser tab. Please close other apps using the camera.";
+    }
+    if (e.name === "OverconstrainedError" || e.name === "ConstraintNotSatisfiedError") {
+        return "The requested camera resolution or orientation is not supported by your device.";
+    }
+    return e.message || String(e);
+}
+
+/**
+ * Safely requests a MediaStream, validating secure contexts (HTTPS / localhost),
+ * falling back to legacy getUserMedia implementations, and providing clear error guidance.
+ *
+ * @param {MediaStreamConstraints} constraints
+ * @returns {Promise<MediaStream>}
+ */
+async function requestUserMedia(constraints) {
+    const isLocalhost =
+        typeof window !== "undefined" &&
+        (window.location.hostname === "localhost" ||
+         window.location.hostname === "127.0.0.1" ||
+         window.location.hostname === "[::1]");
+
+    const isSecure = typeof window !== "undefined" && (window.isSecureContext || isLocalhost);
+
+    if (!isSecure) {
+        const origin = typeof window !== "undefined" ? window.location.origin : "insecure origin";
+        throw new Error(
+            `Camera requires HTTPS or localhost. Browsers block camera access over plain HTTP (${origin}). Please use HTTPS or access via http://localhost.`
+        );
+    }
+
+    if (navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === "function") {
+        return await navigator.mediaDevices.getUserMedia(constraints);
+    }
+
+    // Fallback for older browsers
+    const legacyGetUserMedia =
+        navigator.getUserMedia ||
+        navigator.webkitGetUserMedia ||
+        navigator.mozGetUserMedia ||
+        navigator.msGetUserMedia;
+
+    if (legacyGetUserMedia) {
+        return new Promise((resolve, reject) => {
+            legacyGetUserMedia.call(navigator, constraints, resolve, reject);
+        });
+    }
+
+    throw new Error(
+        "Camera API is not supported in this browser. Please ensure you are using a modern browser with HTTPS or localhost."
+    );
+}
+
+/**
  * Creates and returns a stateful camera controller for continuous QR scanning.
  *
  * Internally the controller keeps track of the active `MediaStream`, the
@@ -110,7 +178,17 @@ export function createCameraController({ video, canvas, onQrDetected, onStatus }
                 },
             };
 
-            stream = await navigator.mediaDevices.getUserMedia(constraints);
+            try {
+                stream = await requestUserMedia(constraints);
+            } catch (err) {
+                // If ideal constraints failed (e.g. overconstrained), retry with basic video
+                if (err.name === "OverconstrainedError" || err.name === "ConstraintNotSatisfiedError") {
+                    stream = await requestUserMedia({ video: true });
+                } else {
+                    throw err;
+                }
+            }
+
             video.srcObject = stream;
             await video.play();
 
@@ -119,7 +197,7 @@ export function createCameraController({ video, canvas, onQrDetected, onStatus }
             scanLoop();
             return true;
         } catch (e) {
-            onStatus("Camera error: " + e.message, "error");
+            onStatus("Camera error: " + formatCameraError(e), "error");
             return false;
         }
     }
@@ -165,16 +243,25 @@ export function createCameraController({ video, canvas, onQrDetected, onStatus }
         stopCamera();
 
         try {
-            stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: { ideal: facingMode } },
-            });
+            try {
+                stream = await requestUserMedia({
+                    video: { facingMode: { ideal: facingMode } },
+                });
+            } catch (err) {
+                if (err.name === "OverconstrainedError" || err.name === "ConstraintNotSatisfiedError") {
+                    stream = await requestUserMedia({ video: true });
+                } else {
+                    throw err;
+                }
+            }
+
             video.srcObject = stream;
             await video.play();
             scanning = true;
             scanLoop();
             onStatus("Scanning... point at Aadhaar QR code", "active");
         } catch (e) {
-            onStatus("Switch failed: " + e.message, "error");
+            onStatus("Switch failed: " + formatCameraError(e), "error");
         }
     }
 

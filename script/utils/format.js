@@ -56,3 +56,77 @@ export function extractComment(bytes) {
     }
     return null;
 }
+
+/**
+ * Transforms decoded Aadhaar data into a clean, normalized, JSON-serializable object.
+ *
+ * Standardizes fields, formats dates, organizes address parts, embeds the
+ * photo as a Base64 data URL (if decoded), and excludes raw TypedArrays so
+ * the output can be safely stringified and sent to downstream APIs.
+ *
+ * @param {import("../modules/aadhaar.js").AadhaarData} userData - Decoded Aadhaar fields.
+ * @param {string | null} [photoBase64=null] - Base64 PNG data-URL of the photo.
+ * @param {string | null} [rawQr=null] - Raw QR string payload.
+ * @returns {Record<string, any>} Clean, serializable JSON object.
+ */
+export function formatAadhaarJson(userData, photoBase64 = null, rawQr = null) {
+    const formattedAadhaar = formatAadhaarNumber(userData.aadhaar_num);
+    const last4 = (userData.aadhaar_num || "").slice(-4);
+
+    const fullAddress = [
+        userData.careof,
+        userData.house,
+        userData.street,
+        userData.landmark,
+        userData.location,
+        userData.vtc,
+        userData.postoffice,
+        userData.subdistrict,
+        userData.district,
+        userData.state,
+        userData.pincode,
+    ]
+        .filter(Boolean)
+        .join(", ");
+
+    return {
+        aadhaarNumber: formattedAadhaar,
+        aadhaarLast4: last4 || null,
+        name: userData.name || null,
+        dob: userData.dob || null,
+        gender:
+            userData.gender === "M"
+                ? "Male"
+                : userData.gender === "F"
+                  ? "Female"
+                  : userData.gender || null,
+        mobileLast4: userData.last_4_digits_mobile_no || null,
+        email: userData.email || null,
+        address: {
+            careof: userData.careof || null,
+            house: userData.house || null,
+            street: userData.street || null,
+            landmark: userData.landmark || null,
+            location: userData.location || null,
+            vtc: userData.vtc || null,
+            postoffice: userData.postoffice || null,
+            subdistrict: userData.subdistrict || null,
+            district: userData.district || null,
+            state: userData.state || null,
+            pincode: userData.pincode || null,
+            full: fullAddress || null,
+        },
+        metadata: {
+            referenceId: userData.referenceid || null,
+            referenceDate:
+                userData.reference_date instanceof Date &&
+                !isNaN(userData.reference_date)
+                    ? userData.reference_date.toISOString()
+                    : null,
+            version: userData.version || null,
+            emailMobileStatus: userData.email_mobile_status || null,
+        },
+        photoBase64: photoBase64 || null,
+        rawQr: rawQr || null,
+    };
+}
