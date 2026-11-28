@@ -1,0 +1,24 @@
+# Secrets & Local Settings
+.env
+.env.*
+credentials.json
+token.json
+.claude/settings.local.json
+setup_wat_claude.sh
+
+# Disposable intermediates
+.tmp/*
+!.tmp/.gitkeep
+
+# Python cache & virtual environments
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+.claude/*
+.vscode/*
+.tmp/*
+tools/*
+workflows/*
+.claudeignore

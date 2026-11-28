@@ -1,6 +1,6 @@
 <!-- ─────────────────────────────────────────────────────────────────────────
      README.md — Aadhaar QR Code Reader
-     @author  Prashantt Tripathi <https://github.com/PtPrashantTripathi>
+     @author
      ───────────────────────────────────────────────────────────────────────── -->
 
 <div align="center">
@@ -12,7 +12,7 @@
 **Scan the Secure QR on any Aadhaar card to instantly verify identity details —
 100 % offline, no server, no data leaves your device.**
 
-[![Deploy to GitHub Pages](https://github.com/PtPrashantTripathi/AadhaarQRCodeReader/actions/workflows/pages.yml/badge.svg)](https://github.com/PtPrashantTripathi/AadhaarQRCodeReader/actions/workflows/pages.yml)
+Deploy to GitHub Pages
 ![License: ](https://img.shields.io/badge/License-GNU%20GPLv3-red)
 ![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)
 
@@ -54,14 +54,14 @@
 Open the live deployment in your browser — no install needed:
 
 ```
-https://PtPrashantTripathi.github.io/AadhaarQRCodeReader/
+https://github.com/username/AadhaarQRCodeReader/
 ```
 
 ### Option 2 — Run locally
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/PtPrashantTripathi/AadhaarQRCodeReader.git
+git clone https://github.com/username/AadhaarQRCodeReader.git
 cd AadhaarQRCodeReader
 
 # 2. Serve with any static server (the app uses ES Modules, so file:// won't work)
@@ -102,7 +102,7 @@ python3 -m http.server 8080
 If you already have the raw QR string (base-10 decimal), append it to the URL:
 
 ```
-https://PtPrashantTripathi.github.io/AadhaarQRCodeReader/?data=<qr-value>
+https://github.com/username/AadhaarQRCodeReader/?data=<qr-value>
 ```
 
 The page will decode and render the card without opening the camera.
@@ -162,12 +162,12 @@ No build tools, no frameworks, no transpilation — vanilla ES Modules.
 
 ## 📄 License
 
-GNU GPL3 © [Prashantt Tripathi](https://github.com/PtPrashantTripathi)
+GNU GPL3 ©
 
 ---
 
 <div align="center">
 
-Made with ❤️ by [@PtPrashantTripathi](https://github.com/PtPrashantTripathi)
+Made with ❤️
 
 </div>
